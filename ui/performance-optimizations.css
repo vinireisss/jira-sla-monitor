@@ -1,0 +1,176 @@
+/* ============================================
+   ⚡ OTIMIZAÇÕES DE PERFORMANCE
+   ============================================
+   
+   Este CSS adiciona otimizações para reduzir
+   uso de CPU e memória sem afetar funcionalidade.
+   
+   Para usar: Adicione ao final do styles.css
+   ============================================ */
+
+/* 1️⃣ REDUZIR REPAINTS - Usar transform em vez de top/left */
+.stat-card:hover,
+.custom-btn:hover,
+.menu-item:hover {
+  /* Em vez de: margin-top: -2px; */
+  transform: translateY(-2px) !important;
+  /* GPU acceleration - mais eficiente */
+}
+
+/* 2️⃣ CONTENÇÃO DE LAYOUT - Evitar reflow em cascata */
+.stat-card,
+.pro-section,
+.custom-btn {
+  contain: layout style !important; /* Isola mudanças de layout */
+}
+
+/* 3️⃣ REMOVER ANIMAÇÕES DESNECESSÁRIAS EM ELEMENTOS OCULTOS */
+.hidden,
+[style*="display: none"],
+[style*="display:none"] {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* 4️⃣ SIMPLIFICAR SOMBRAS (Muito pesadas!) */
+.app-container,
+.stat-card,
+.pro-section {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important; /* Simples */
+  /* Remove sombras complexas com blur alto */
+}
+
+/* 5️⃣ OTIMIZAR GRADIENTES - Usar gradientes simples */
+.stat-number {
+  /* Se possível, usar cor sólida em vez de gradiente */
+  /* Uncomment se quiser desabilitar gradientes: */
+  /* background: none !important; */
+  /* color: #667eea !important; */
+}
+
+/* 6️⃣ REDUZIR BLUR (MUITO pesado!) */
+.header,
+.footer,
+.menu-dropdown,
+.notifications-preview {
+  backdrop-filter: blur(5px) !important; /* Reduzido de 10px para 5px */
+}
+
+/* Ou desabilitar completamente se preferir mais performance: */
+/*
+.header,
+.footer,
+.menu-dropdown,
+.notifications-preview {
+  backdrop-filter: none !important;
+  background: rgba(20, 20, 30, 0.95) !important;
+}
+*/
+
+/* 7️⃣ LAZY LOADING - Elementos fora da viewport não renderizam */
+.ticket-item,
+.recent-ticket-item,
+.notification-item {
+  content-visibility: auto !important; /* Renderiza só quando visível */
+  contain-intrinsic-size: auto 80px !important; /* Placeholder size */
+}
+
+/* 8️⃣ REMOVER TRANSITIONS DE PROPRIEDADES PESADAS */
+* {
+  /* Nunca fazer transition de: width, height, top, left */
+  transition-property: opacity, transform !important;
+  /* Só transiciona propriedades baratas (GPU) */
+}
+
+/* 9️⃣ OTIMIZAR SCROLLBAR (Mais simples) */
+::-webkit-scrollbar-thumb {
+  transition: none !important; /* Remove transition da scrollbar */
+}
+
+/* 🔟 SKELETON LOADING - Animação mais eficiente */
+@keyframes skeleton-loading {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.6; }
+}
+
+.skeleton {
+  /* Animação simples com opacity (GPU) em vez de background-position (CPU) */
+  animation: skeleton-loading 1.5s ease-in-out infinite !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  background-size: initial !important;
+}
+
+/* 1️⃣1️⃣ DESABILITAR ANIMAÇÕES EM ELEMENTOS PEQUENOS */
+.badge,
+.notification-badge,
+.mini-stat {
+  animation: none !important; /* Remove pulse animations */
+}
+
+/* 1️⃣2️⃣ OTIMIZAR HOVER EFFECTS */
+.stat-card::before {
+  transition-duration: 0.2s !important; /* Reduzido de 0.3s */
+}
+
+/* 1️⃣3️⃣ CONTENÇÃO DE PAINT */
+.notifications-preview-body,
+.tickets-list,
+.recent-tickets-list {
+  contain: paint !important; /* Evita repaint fora do container */
+}
+
+/* 1️⃣4️⃣ FONT RENDERING OTIMIZADO */
+body, .app-container {
+  text-rendering: optimizeSpeed !important; /* Mais rápido que geometricPrecision */
+  font-smooth: auto !important;
+}
+
+/* 1️⃣5️⃣ REMOVER TRANSFORMS DESNECESSÁRIOS */
+.expand-btn::after,
+.expand-btn-inline::after {
+  display: none !important; /* Remove glow effect pesado */
+}
+
+/* 1️⃣6️⃣ SIMPLIFICAR EFEITOS DE GLASSMORPHISM */
+.app-container::before {
+  /* Reduzir opacity do glassmorphism */
+  opacity: 0.05 !important; /* Reduzido de 0.1 */
+}
+
+/* 1️⃣7️⃣ OTIMIZAR MODAIS (Só renderizar quando abertos) */
+.config-panel,
+.shortcuts-modal,
+.ticket-preview-modal,
+.quick-search-modal {
+  content-visibility: auto !important;
+}
+
+/* 1️⃣8️⃣ REDUZIR COMPOSITING LAYERS */
+.stat-card,
+.custom-btn,
+.menu-item {
+  will-change: auto !important; /* Remove reserva de memória */
+}
+
+/* Só usar will-change quando realmente necessário: */
+.stat-card:hover {
+  will-change: transform !important; /* Apenas no hover */
+}
+
+/* 1️⃣9️⃣ OTIMIZAR BORDER-RADIUS (Pesado em elementos grandes) */
+.app-container {
+  border-radius: 8px !important; /* Reduzido de 12px */
+}
+
+/* 2️⃣0️⃣ PERFORMANCE MODE - Uncomment para máxima performance */
+/*
+* {
+  animation: none !important;
+  transition: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  will-change: auto !important;
+}
+*/
+

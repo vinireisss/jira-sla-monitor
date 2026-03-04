@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jira Monitor</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="ux-enhancements.css">
+  <link rel="stylesheet" href="performance-optimizations.css">
+  <link rel="stylesheet" href="custom-fixes.css">
+  <link rel="stylesheet" href="pywebview-fixes.css">
+  <!-- Driver.js - Onboarding Tour (local v1.3.6) -->
+  <link rel="stylesheet" href="driver.css">
+  <script src="driver.js"></script>
+  <script src="confetti.js"></script>
+  <script src="i18n.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 🔬 MODO MICRO - Visualização ultra compacta (192x78) -->
+    <div class="micro-mode" id="micro-mode" style="display: none;">
+      <div class="micro-mode-content">
+        <div class="micro-stats">
+          <div class="micro-stat micro-stat-total" title="Total de Tickets">
+            <span class="micro-stat-icon">📊</span>
+            <span class="micro-stat-value" id="micro-total">0</span>
+          </div>
+          <div class="micro-stat micro-stat-support" title="Waiting for Support">
+            <span class="micro-stat-icon">🔧</span>
+            <span class="micro-stat-value" id="micro-support">0</span>
+          </div>
+          <div class="micro-stat micro-stat-customer" title="Waiting for Customer">
+            <span class="micro-stat-icon">👤</span>
+            <span class="micro-stat-value" id="micro-customer">0</span>
+          </div>
+          <div class="micro-stat micro-stat-pending" title="Pending">
+            <span class="micro-stat-icon">⏸️</span>
+            <span class="micro-stat-value" id="micro-pending">0</span>
+          </div>
+          <div class="micro-stat micro-stat-inprogress" title="In Progress">
+            <span class="micro-stat-icon">🔄</span>
+            <span class="micro-stat-value" id="micro-inprogress">0</span>
+          </div>
+        </div>
+        <div class="micro-status">
+          <span class="micro-status-dot" id="micro-status-dot"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="header pywebview-drag-region" id="header">
+      <div class="header-left">
+        <span class="app-title">
+          <svg class="jira-icon" viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor" d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.97 4.35 4.35 4.35V8.35c0-3.51-2.84-6.35-6.35-6.35h-4.13zm-4.35 6.35c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.97 4.35 4.35 4.35v-4.35c0-3.51-2.84-6.35-6.35-6.35H7.18zm-4.35 6.35c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.97 4.35 4.35 4.35v-4.35c0-3.51-2.84-6.35-6.35-6.35H2.83z"/>
+          </svg>
+          Jira Monitor
+        </span>
+        <span id="monitored-user-indicator" class="monitored-user-indicator" style="display: none;"></span>
+      </div>
+      
+      <div class="header-right">
+        <!-- Menu Hambúrguer -->
+        <button class="header-btn menu-btn" id="menu-btn" title="Menu" data-i18n="header.menu" data-i18n-title>
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+          </svg>
+        </button>
+        
+        <!-- Dropdown do Menu -->
+        <div class="menu-dropdown" id="menu-dropdown" style="display: none;">
+          <!-- PRINCIPAIS -->
+          <div class="menu-item" id="menu-pro" title="Ativar recursos avançados">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-4.41 0-8-3.59-8-8V9l8-4.5L20 9v3c0 4.41-3.59 8-8 8z"/>
+            </svg>
+            <span data-i18n="menu.proMode">Modo Pro</span>
+          </div>
+          <div class="menu-item" id="menu-refresh" title="Atualizar dados manualmente (Cmd+R)">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+            <span data-i18n="menu.refresh">Atualizar</span>
+          </div>
+          <div class="menu-item" id="menu-settings" title="Abrir configurações (Cmd+,)">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+            <span data-i18n="menu.settings">Configurações</span>
+          </div>
+          
+          <div class="menu-divider"></div>
+          
+          <!-- LINKS EXTERNOS -->
+          <div class="menu-item" id="menu-okta" title="Abrir Nubank OKTA">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+            </svg>
+            <span data-i18n="menu.okta">OKTA</span>
+          </div>
+          <div class="menu-item" id="menu-jamf" title="Abrir JAMF Cloud">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/>
+            </svg>
+            <span data-i18n="menu.jamf">JAMF</span>
+          </div>
+          <div class="menu-item" id="menu-jira-portal" title="Abrir Jira Portal">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.97 4.35 4.35 4.35V8.35c0-3.51-2.84-6.35-6.35-6.35h-4.13zm-4.35 6.35c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.97 4.35 4.35 4.35v-4.35c0-3.51-2.84-6.35-6.35-6.35H7.18zm-4.35 6.35c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.97 4.35 4.35 4.35v-4.35c0-3.51-2.84-6.35-6.35-6.35H2.83z"/>
+            </svg>
+            <span>Jira Portal</span>
+          </div>
+          <div class="menu-item" id="menu-google-admin" title="Abrir Google Admin Console">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+            </svg>
+            <span>Google Admin Console</span>
+          </div>
+          
+          <div class="menu-divider"></div>
+          
+          <!-- FERRAMENTAS -->
+          <div class="menu-item" id="menu-search" title="Busca rápida de tickets (Cmd+K)">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <span data-i18n="menu.search">Busca Rápida</span>
+          </div>
+          <div class="menu-item" id="menu-shortcuts" title="Ver todos os atalhos de teclado">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/>
+            </svg>
+            <span data-i18n="menu.shortcuts">Atalhos</span>
+          </div>
+          <div class="menu-item" id="menu-templates" title="Templates de resposta rápida (Cmd+Shift+T)">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
+            <span data-i18n="menu.templates">Templates</span>
+          </div>
+          <div class="menu-item" id="menu-timer" title="Abrir Timer/Pomodoro (Cmd+T)">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+            </svg>
+            <span data-i18n="menu.timer">Timer / Pomodoro</span>
+          </div>
+          
+          <div class="menu-divider"></div>
+          
+          <!-- PERSONALIZAÇÃO -->
+          <div class="menu-item" id="menu-themes" title="Personalizar tema">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+            </svg>
+            <span data-i18n="menu.themes">Temas</span>
+          </div>
+          <div class="menu-item" id="menu-toggle-layout" title="Alternar Layout (Cmd+L)">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
+            </svg>
+            <span>Layout</span>
+          </div>
+          <div class="menu-item" id="menu-language" title="Idioma / Language / Idioma">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+            </svg>
+            <span data-i18n="menu.language">🌍 Idioma</span>
+          </div>
+          <div class="menu-item-slider" id="menu-opacity-container" title="Ajustar transparência da janela">
+            <div class="menu-item-slider-header">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M17.66 8L12 2.35 6.34 8C4.78 9.56 4 11.64 4 13.64s.78 4.11 2.34 5.67 3.61 2.35 5.66 2.35 4.1-.79 5.66-2.35S20 15.64 20 13.64 19.22 9.56 17.66 8zM6 14c.01-2 .62-3.27 1.76-4.4L12 5.27l4.24 4.38C17.38 10.77 17.99 12 18 14H6z"/>
+              </svg>
+              <span>🪟 Opacidade: <span id="opacity-value">100%</span></span>
+            </div>
+            <input type="range" id="opacity-slider" min="20" max="100" value="100" step="5" class="opacity-slider">
+          </div>
+          
+          <div class="menu-divider"></div>
+          
+          <!-- EXPORTAR -->
+          <div class="menu-item" id="menu-export" title="Exportar relatório">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
+            </svg>
+            <span data-i18n="menu.export">Exportar</span>
+          </div>
+        </div>
+        
+        <!-- Indicador de Status de Conexão -->
+        <div class="connection-status" id="connection-status" title="Status da conexão">
+          <span class="status-dot" id="status-dot"></span>
+        </div>
+        
+        <!-- Botão de Notificações -->
+        <button class="header-btn notifications-btn" id="notifications-btn" title="Notificações" data-i18n="header.notifications" data-i18n-title>
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+          </svg>
+          <span class="notification-badge" id="notification-badge" style="display: none;">0</span>
+        </button>
+        
+        <!-- Preview de Notificações -->
+        <div class="notifications-preview" id="notifications-preview" style="display: none;">
+          <div class="notifications-preview-header">
+            <h3>Notificações</h3>
+            <button class="close-preview-btn" id="close-notifications-preview">✕</button>
+          </div>
+          <div class="notifications-preview-body" id="notifications-preview-body">
+            <!-- Notificações serão inseridas aqui -->
+          </div>
+          <div class="notifications-preview-footer">
+            <button class="btn-secondary" id="view-all-notifications">Ver Todas</button>
+            <button class="btn-secondary" id="clear-notifications">Limpar</button>
+            <button class="btn-link-small" id="reset-notification-history" title="Resetar histórico de notificações limpas">🔄 Resetar</button>
+          </div>
+        </div>
+        
+        <!-- Botão de Documentação -->
+        <button class="header-btn" id="docs-btn" title="Documentação" data-i18n="header.docs" data-i18n-title>
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+        </button>
+        
+        <!-- Dropdown de Documentação -->
+        <div class="docs-dropdown" id="docs-dropdown" style="display: none;">
+          <div class="docs-dropdown-header">
+            <h3>📚 Documentação</h3>
+            <button class="close-preview-btn" id="close-docs-dropdown">✕</button>
+          </div>
+          <div class="docs-dropdown-body">
+            <button class="docs-link-btn" data-url="https://docs.google.com/document/d/1sJOqXlz08CKpy1UtFlRLpj-mG9snFyclxfI1GDu91l4/edit?tab=t.0">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+              </svg>
+              <span>Documentação L1</span>
+            </button>
+            <button class="docs-link-btn" data-url="https://docs.google.com/document/d/1Z1l0p92i0a66_pbNo4TNOE9OU2J-qEp2Glp9bL-9U-s/edit?tab=t.0#heading=h.2qw02tqyyaa">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+              </svg>
+              <span>Documentação BPO</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Botões de Zoom -->
+        <button class="header-btn zoom-btn" id="zoom-out-btn" title="Diminuir Zoom (Cmd+-)">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/>
+          </svg>
+        </button>
+        
+        <button class="header-btn zoom-btn" id="zoom-in-btn" title="Aumentar Zoom (Cmd++)">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7h-1v2H7v1h2v2h1v-2h2V9h-2z"/>
+          </svg>
+        </button>
+        
+        <button class="header-btn" id="toggle-density-btn" title="Modo de Densidade">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M3 13h8v8H3v-8zm0-10h8v8H3V3zm10 0h8v8h-8V3zm0 10h8v8h-8v-8z"/>
+          </svg>
+        </button>
+        
+        <!-- Botão de Usuário Monitorado (CANTO SUPERIOR DIREITO) -->
+        <button class="header-btn user-monitor-btn" id="user-monitor-btn" title="Usuário Monitorado">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+          <span class="user-monitor-label" id="user-monitor-label">Você</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" class="dropdown-arrow">
+            <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+          </svg>
+        </button>
+        
+        <!-- Dropdown de Usuário Monitorado -->
+        <div class="user-monitor-dropdown" id="user-monitor-dropdown" style="display: none;">
+          <div class="user-monitor-dropdown-header">
+            <h3>👤 Monitorar Usuário</h3>
+            <button class="close-preview-btn" id="close-user-monitor-dropdown">✕</button>
+          </div>
+          <div class="user-monitor-dropdown-body">
+            <div class="user-list" id="user-list">
+              <!-- Lista de usuários será inserida aqui -->
+            </div>
+            <div class="user-monitor-divider"></div>
+            <button class="add-user-btn" id="add-user-btn">
+              <svg viewBox="0 0 24 24" width="18" height="18">
+                <path fill="currentColor" d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              <span>Adicionar Outro Usuário...</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Toggle Janela Flutuante -->
+        <div class="floating-toggle-container" id="floating-toggle-container" title="Janela Flutuante (Faróis)">
+          <span class="floating-toggle-label">🪟</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="floating-window-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        
+        <button class="header-btn" id="minimize-btn" title="Minimizar (Esc)" data-i18n="header.minimize" data-i18n-title>
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M19 13H5v-2h14v2z"/>
+          </svg>
+        </button>
+        
+        <button class="header-btn close-btn" id="close-btn" title="Fechar" data-i18n="header.close" data-i18n-title>
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Campo de Busca Rápida -->
+    <div class="search-container" id="search-container" style="display: none;">
+      <input 
+        type="text" 
+        class="search-input" 
+        id="search-input" 
+        placeholder="Buscar ticket (ex: IT-1234) ou palavras-chave... (Cmd+K)"
+        autocomplete="off"
+        data-i18n="search.placeholder"
+        data-i18n-placeholder
+      >
+      <div class="search-results" id="search-results"></div>
+    </div>
+
+    <!-- 🎯 Botão Flutuante para Sair do Modo Super Compacto -->
+    <div class="super-compact-exit-btn" id="super-compact-exit-btn" style="display: none;" title="Voltar ao modo normal (ESC ou Cmd+L)">
+      <svg viewBox="0 0 24 24" width="16" height="16">
+        <path fill="currentColor" d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+      </svg>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div class="content" id="content">
+      <!-- Banner de Erro -->
+      <div class="error-banner" id="error-banner" style="display: none;">
+        <div class="error-banner-content">
+          <svg class="error-icon" viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          <div class="error-message">
+            <strong id="error-title" data-i18n="error.connection">Erro de Conexão</strong>
+            <span id="error-description" data-i18n="error.noConnection">Não foi possível conectar ao Jira</span>
+          </div>
+          <button class="error-retry-btn" id="error-retry-btn" data-i18n="error.retry">Tentar Novamente</button>
+          <button class="error-close-btn" id="error-close-btn">✕</button>
+        </div>
+      </div>
+      
+      <!-- Skeleton Loading (mostrado durante carregamento inicial) -->
+      <div class="skeleton-loading" id="skeleton-loading" style="display: none;">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+
+      <!-- Mini Stats Dashboard -->
+      <div class="mini-stats-dashboard" id="mini-stats-dashboard" style="display: none;">
+        <div class="mini-stat">
+          <span class="mini-stat-label">Taxa de Resolução</span>
+          <span class="mini-stat-value" id="mini-resolution-rate">--</span>
+        </div>
+        <div class="mini-stat">
+          <span class="mini-stat-label">Tempo Médio</span>
+          <span class="mini-stat-value" id="mini-avg-time">--</span>
+        </div>
+        <div class="mini-stat">
+          <span class="mini-stat-label">Hoje</span>
+          <span class="mini-stat-value" id="mini-today-count">0</span>
+        </div>
+      </div>
+
+      <!-- Cards de Estatísticas -->
+      <div class="stats-grid" id="stats-grid">
+        <!-- Card Total -->
+        <div class="stat-card stat-card-total" data-card-id="total" id="card-total">
+          <div class="stat-card-header">
+            <div class="stat-card-title-group">
+              <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
+                </svg>
+              </div>
+              <h3>Total de Tickets - IT</h3>
+            </div>
+            <button class="expand-btn" data-card="total" title="Expandir">
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="stat-number" id="stat-total">0</div>
+          <div class="stat-badges">
+            <span class="badge badge-sla" id="badge-sla" style="display: none;">
+              <span class="badge-icon">⏰</span>
+              <span class="badge-text" id="badge-sla-text">0</span>
+            </span>
+            <span class="badge badge-old" id="badge-old" style="display: none;">
+              <span class="badge-icon">📅</span>
+              <span class="badge-text" id="badge-old-text">0</span>
+            </span>
+          </div>
+          <div class="tickets-list" id="tickets-list-total" style="display: none;">
+            <!-- Lista de tickets será inserida aqui -->
+          </div>
+        </div>
+
+        <!-- Card Waiting for Support -->
+        <div class="stat-card stat-card-support" data-card-id="support" id="card-support">
+          <div class="stat-card-header">
+            <div class="stat-card-title-group">
+              <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+                </svg>
+              </div>
+              <h3>Waiting for Support - IT</h3>
+            </div>
+            <button class="expand-btn" data-card="support" title="Expandir">
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="stat-number" id="stat-support">0</div>
+          <div class="tickets-list" id="tickets-list-support" style="display: none;">
+            <!-- Lista de tickets será inserida aqui -->
+          </div>
+        </div>
+
+        <!-- Card Waiting for Customer -->
+        <div class="stat-card stat-card-customer" data-card-id="customer" id="card-customer">
+          <div class="stat-card-header">
+            <div class="stat-card-title-group">
+              <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+              </div>
+              <h3>Waiting for Customer - IT</h3>
+            </div>
+            <button class="expand-btn" data-card="customer" title="Expandir">
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="stat-number" id="stat-customer">0</div>
+          <div class="tickets-list" id="tickets-list-customer" style="display: none;">
+            <!-- Lista de tickets será inserida aqui -->
+          </div>
+        </div>
+
+        <!-- Card Tickets Pending -->
+        <div class="stat-card stat-card-pending" data-card-id="pending" id="card-pending">
+          <div class="stat-card-header">
+            <div class="stat-card-title-group">
+              <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+              </div>
+              <h3>Tickets Pending - IT</h3>
+            </div>
+            <button class="expand-btn" data-card="pending" title="Expandir">
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="stat-number" id="stat-pending">0</div>
+          <div class="tickets-list" id="tickets-list-pending" style="display: none;">
+            <!-- Lista de tickets será inserida aqui -->
+          </div>
+        </div>
+
+        <!-- Card Tickets In Progress -->
+        <div class="stat-card stat-card-inprogress" data-card-id="inprogress" id="card-inprogress">
+          <div class="stat-card-header">
+            <div class="stat-card-title-group">
+              <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+              </div>
+              <h3>Tickets In Progress - IT</h3>
+            </div>
+            <button class="expand-btn" data-card="inprogress" title="Expandir">
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="stat-number" id="stat-inprogress">0</div>
+          <div class="tickets-list" id="tickets-list-inprogress" style="display: none;">
+            <!-- Lista de tickets será inserida aqui -->
+          </div>
+        </div>
+
+        <!-- 📱 NOVA FILA: Tickets Pending SimCard (Filtro 52128) -->
+        <div class="stat-card stat-card-simcard" data-card-id="simcard" id="card-simcard">
+          <div class="stat-card-header">
+            <div class="stat-card-title-group">
+              <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M19.5 6h-15C3.67 6 3 6.67 3 7.5v13c0 .83.67 1.5 1.5 1.5h15c.83 0 1.5-.67 1.5-1.5v-13c0-.83-.67-1.5-1.5-1.5zm-14 13h-1v-11h1v11zm2 0h-1v-11h1v11zm2 0h-1v-11h1v11zm2 0h-1v-11h1v11zm8 0h-7v-11h7v11z"/>
+                </svg>
+              </div>
+              <h3>Tickets Pending SimCard</h3>
+            </div>
+            <button class="expand-btn" data-card="simcard" title="Expandir">
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="stat-number" id="stat-simcard">0</div>
+          <div class="tickets-list" id="tickets-list-simcard" style="display: none;">
+            <!-- Lista de tickets será inserida aqui -->
+          </div>
+        </div>
+
+        <!-- 🤖 NOVA FILA: Tickets L0 Jira Bot (Queue 7631) -->
+        <div class="stat-card stat-card-l0bot" data-card-id="l0bot" id="card-l0bot">
+          <div class="stat-card-header">
+            <div class="stat-card-title-group">
+              <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-1-4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                </svg>
+              </div>
+              <h3>Tickets L0 Jira Bot</h3>
+            </div>
+            <button class="expand-btn" data-card="l0bot" title="Expandir">
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="stat-number" id="stat-l0bot">0</div>
+          <div class="tickets-list" id="tickets-list-l0bot" style="display: none;">
+            <!-- Lista de tickets será inserida aqui -->
+          </div>
+        </div>
+
+        <!-- 🎯 NOVA FILA: All L1 Open (Queue 3015) -->
+        <div class="stat-card stat-card-l1open" data-card-id="l1open" id="card-l1open">
+          <div class="stat-card-header">
+            <div class="stat-card-title-group">
+              <div class="stat-card-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+              </div>
+              <h3>All L1 Open</h3>
+            </div>
+            <button class="expand-btn" data-card="l1open" title="Expandir">
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="stat-number" id="stat-l1open">0</div>
+          <div class="tickets-list" id="tickets-list-l1open" style="display: none;">
+            <!-- Lista de tickets será inserida aqui -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Modo Pro -->
+      <div class="pro-mode-section" id="pro-mode-section" style="display: none;">
+        <!-- Indicador de Usuário Monitorado no Modo Pro -->
+        <div class="pro-mode-user-indicator" id="pro-mode-user-indicator" style="display: none;">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+          <span id="pro-mode-user-name"></span>
+        </div>
+        
+        <!-- Atividade de Hoje -->
+        <div class="pro-section" id="daily-activity-section">
+          <div class="pro-section-header">
+            <h3 class="pro-section-title" data-i18n="pro.dailyActivity">📅 Atividade de Hoje</h3>
+            <button class="expand-btn-inline" id="expand-daily-activity" title="Expandir" data-i18n="stats.expand" data-i18n-title>
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="daily-activity-cards">
+            <div class="activity-card activity-card-received" onclick="toggleActivityDetails('received')">
+              <div class="activity-card-icon">🆕</div>
+              <div class="activity-card-value" id="activity-received">0</div>
+              <div class="activity-card-label" data-i18n="pro.received">Recebidos</div>
+              <div class="activity-card-sublabel" data-i18n="pro.today">hoje</div>
+            </div>
+            
+            <div class="activity-card activity-card-resolved" onclick="toggleActivityDetails('resolved')">
+              <div class="activity-card-icon">✅</div>
+              <div class="activity-card-value" id="activity-resolved">0</div>
+              <div class="activity-card-label" data-i18n="pro.resolved">Fechados</div>
+              <div class="activity-card-sublabel" data-i18n="pro.today">hoje</div>
+            </div>
+            
+            <div class="activity-card activity-card-activity" onclick="toggleActivityDetails('commented')">
+              <div class="activity-card-icon">💬</div>
+              <div class="activity-card-value" id="activity-commented">0</div>
+              <div class="activity-card-label" data-i18n="pro.commented">Atividade</div>
+              <div class="activity-card-sublabel" data-i18n="pro.comments">comentários</div>
+            </div>
+          </div>
+          
+          <!-- Lista de detalhes expansível -->
+          <div class="daily-activity-details" id="daily-activity-details" style="display: none;">
+            <div class="activity-detail-section">
+              <h4 class="activity-detail-title" data-i18n="daily.receivedTitle">🆕 Tickets Recebidos Hoje</h4>
+              <div class="activity-detail-list" id="activity-received-list">
+                <p class="no-activity-msg" data-i18n="daily.noReceived">Nenhum ticket recebido hoje</p>
+              </div>
+            </div>
+            
+            <div class="activity-detail-section">
+              <h4 class="activity-detail-title" data-i18n="daily.resolvedTitle">✅ Tickets Fechados Hoje</h4>
+              <div class="activity-detail-list" id="activity-resolved-list">
+                <p class="no-activity-msg" data-i18n="daily.noResolved">Nenhum ticket fechado hoje</p>
+              </div>
+            </div>
+            
+            <div class="activity-detail-section">
+              <h4 class="activity-detail-title" data-i18n="daily.commentsTitle">💬 Comentários de Hoje</h4>
+              <div class="activity-detail-list" id="activity-commented-list">
+                <p class="no-activity-msg" data-i18n="daily.noComments">Nenhum comentário hoje</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tickets de Telefonia SIM cards -->
+        <div class="pro-section" id="sim-cards-section">
+          <h3 class="pro-section-title" data-i18n="pro.telefonia">📱 Telefonia</h3>
+          <div class="sim-cards-main">
+            <button class="custom-btn sim-cards-count-btn" id="sim-cards-count-btn">
+              <span class="btn-text" data-i18n="pro.simCards">Tickets SIM Cards</span>
+              <span class="stat-number-inline" id="sim-cards-count">0</span>
+            </button>
+            <button class="expand-btn-inline" id="expand-sim-cards" title="Expandir">
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="tickets-list" id="tickets-list-sim-cards" style="display: none;">
+            <!-- Lista de tickets SIM cards será inserida aqui -->
+          </div>
+          <div class="custom-buttons-container" id="sim-cards-buttons-container">
+            <button class="custom-btn draggable-btn" data-btn-id="mve" data-url="https://mve.vivo.com.br/oauth?logout=true">
+              <span class="drag-handle">☰</span>
+              <span class="btn-text" contenteditable="false">MVE</span>
+              <span class="edit-icon">✏️</span>
+            </button>
+            <button class="custom-btn draggable-btn" data-btn-id="simcard-control" data-url="https://docs.google.com/spreadsheets/d/1bgSkw5sIIOgYqqcQzJrM6MTwD1AuZXrZiBVLcxqiEK8/edit?gid=0#gid=0">
+              <span class="drag-handle">☰</span>
+              <span class="btn-text" contenteditable="false">Controle de SIMCARD</span>
+              <span class="edit-icon">✏️</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tickets Avaliados -->
+        <div class="pro-section" id="evaluated-tickets-section">
+          <h3 class="pro-section-title" data-i18n="pro.evaluated">✅ Tickets Avaliados</h3>
+          
+          <!-- Barra de Filtros por Estrelas -->
+          <div class="evaluated-filters" id="evaluated-filters">
+            <button class="filter-chip active" id="filter-all" data-rating="all" onclick="filterEvaluatedTicketsByRating(null)">
+              <span class="filter-label">Todos</span>
+              <span class="filter-count" id="count-all">0</span>
+            </button>
+            <button class="filter-chip" id="filter-5" data-rating="5" onclick="filterEvaluatedTicketsByRating(5)">
+              <span class="filter-label">⭐⭐⭐⭐⭐</span>
+              <span class="filter-count" id="count-5">0</span>
+            </button>
+            <button class="filter-chip" id="filter-4" data-rating="4" onclick="filterEvaluatedTicketsByRating(4)">
+              <span class="filter-label">⭐⭐⭐⭐</span>
+              <span class="filter-count" id="count-4">0</span>
+            </button>
+            <button class="filter-chip" id="filter-3" data-rating="3" onclick="filterEvaluatedTicketsByRating(3)">
+              <span class="filter-label">⭐⭐⭐</span>
+              <span class="filter-count" id="count-3">0</span>
+            </button>
+            <button class="filter-chip" id="filter-2" data-rating="2" onclick="filterEvaluatedTicketsByRating(2)">
+              <span class="filter-label">⭐⭐</span>
+              <span class="filter-count" id="count-2">0</span>
+            </button>
+            <button class="filter-chip" id="filter-1" data-rating="1" onclick="filterEvaluatedTicketsByRating(1)">
+              <span class="filter-label">⭐</span>
+              <span class="filter-count" id="count-1">0</span>
+            </button>
+            <button class="expand-btn-inline" id="expand-evaluated-tickets" title="Expandir">
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="tickets-list" id="tickets-list-evaluated-tickets" style="display: none;">
+            <!-- Lista de tickets avaliados será inserida aqui -->
+          </div>
+        </div>
+
+        <!-- Estatísticas por Projeto -->
+        <div class="pro-section" id="project-stats-section">
+          <h3 class="pro-section-title" data-i18n="pro.byProject">📊 Por Projeto</h3>
+          <div class="custom-buttons-container" id="project-stats">
+            <!-- Botões de projeto serão inseridos dinamicamente -->
+          </div>
+        </div>
+
+        <!-- Tickets Recentes -->
+        <div class="pro-section" id="recent-tickets-section">
+          <h3 class="pro-section-title" data-i18n="pro.recentTickets">🕐 Tickets Recentes</h3>
+          <div class="recent-tickets-list" id="recent-tickets-list">
+            <!-- Lista de tickets recentes será inserida aqui -->
+          </div>
+        </div>
+
+        <!-- Gráfico de Tendência -->
+        <div class="pro-section" id="trend-section">
+          <h3 class="pro-section-title" data-i18n="pro.trend">📈 Tendência (7 dias)</h3>
+          <div class="trend-chart" id="trend-chart">
+            <!-- Gráfico será inserido aqui -->
+          </div>
+        </div>
+
+        <!-- 📊 DASHBOARD DE PERFORMANCE -->
+        <div class="pro-section" id="performance-dashboard-section">
+          <div class="pro-section-header">
+            <h3 class="pro-section-title" data-i18n="perf.title">📊 Dashboard de Performance</h3>
+            <span class="pro-monitored-user-badge" id="dashboard-monitored-user" style="display: none;"></span>
+            <button class="expand-btn-inline" id="expand-performance-dashboard" title="Expandir" data-i18n="stats.expand" data-i18n-title>
+              <svg class="expand-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Resumo de métricas -->
+          <div class="performance-summary" id="performance-summary">
+            <div class="perf-metric perf-metric-primary">
+              <div class="perf-metric-icon">⏱️</div>
+              <div class="perf-metric-value" id="perf-avg-resolution">--</div>
+              <div class="perf-metric-label" data-i18n="perf.avgTime">Tempo Médio</div>
+              <div class="perf-metric-sublabel" data-i18n="perf.resolution">de resolução</div>
+            </div>
+            
+            <div class="perf-metric perf-metric-success">
+              <div class="perf-metric-icon">✅</div>
+              <div class="perf-metric-value" id="perf-tickets-resolved">0</div>
+              <div class="perf-metric-label" data-i18n="perf.resolved">Resolvidos</div>
+              <div class="perf-metric-sublabel" data-i18n="perf.last30days">últimos 30 dias</div>
+            </div>
+            
+            <div class="perf-metric perf-metric-info">
+              <div class="perf-metric-icon">📈</div>
+              <div class="perf-metric-value" id="perf-rate-week">0</div>
+              <div class="perf-metric-label" data-i18n="perf.perWeek">Por Semana</div>
+              <div class="perf-metric-sublabel" data-i18n="perf.closeRate">taxa fechamento</div>
+            </div>
+          </div>
+          
+          <!-- Detalhes expandidos -->
+          <div class="performance-details" id="performance-details" style="display: none;">
+            <!-- Gráficos de pizza -->
+            <div class="performance-charts">
+              <div class="perf-chart-container">
+                <h4 class="perf-chart-title" data-i18n="perf.byPriority">🏷️ Por Prioridade</h4>
+                <canvas id="chart-by-priority" width="200" height="200"></canvas>
+                <div id="chart-legend-priority" class="chart-legend"></div>
+              </div>
+              
+              <div class="perf-chart-container">
+                <h4 class="perf-chart-title" data-i18n="perf.byProject">📦 Por Projeto</h4>
+                <canvas id="chart-by-project" width="200" height="200"></canvas>
+                <div id="chart-legend-project" class="chart-legend"></div>
+              </div>
+            </div>
+            
+            <!-- Heatmap de atividade -->
+            <div class="perf-heatmap-container">
+              <h4 class="perf-chart-title" data-i18n="perf.heatmap">🔥 Heatmap de Atividade</h4>
+              <div class="heatmap-subtitle" data-i18n="perf.productive">Horários mais produtivos (últimos 30 dias)</div>
+              <div class="heatmap-grid" id="heatmap-by-hour">
+                <!-- Grid de 24 horas será gerado dinamicamente -->
+              </div>
+              <div class="heatmap-labels">
+                <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span>
+              </div>
+            </div>
+            
+            <!-- Tickets recentes resolvidos -->
+            <div class="perf-recent-resolved">
+              <h4 class="perf-chart-title" data-i18n="perf.last10">📋 Últimos 10 Resolvidos</h4>
+              <div class="recent-resolved-list" id="recent-resolved-list">
+                <!-- Lista será gerada dinamicamente -->
+              </div>
+            </div>
+          </div>
+          
+          <button class="performance-refresh-btn" id="performance-refresh-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+            <span data-i18n="perf.updateMetrics">Atualizar Métricas</span>
+          </button>
+        </div>
+
+      </div>
+      
+      <!-- ⏱️ WIDGET DE TIMER/POMODORO (flutuante) -->
+      <div class="timer-widget" id="timer-widget" style="display: none;">
+        <div class="timer-header">
+          <div class="timer-title">
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path fill="currentColor" d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+            </svg>
+            <span id="timer-ticket-key">Timer</span>
+          </div>
+          <div class="timer-controls-mini">
+            <button class="timer-minimize-btn" id="timer-minimize-btn" title="Minimizar">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M19 13H5v-2h14v2z"/>
+              </svg>
+            </button>
+            <button class="timer-close-btn" id="timer-close-btn" title="Fechar">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div class="timer-body">
+          <div class="timer-display" id="timer-display">00:00:00</div>
+          <div class="timer-mode-selector">
+            <button class="timer-mode-btn active" data-mode="manual" id="timer-mode-manual">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+              </svg>
+              <span>Manual</span>
+            </button>
+            <button class="timer-mode-btn" data-mode="pomodoro" id="timer-mode-pomodoro">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M9 2c-1.05 0-2.05.16-3 .46 4.06 1.27 7 5.06 7 9.54 0 4.48-2.94 8.27-7 9.54.95.3 1.95.46 3 .46 5.52 0 10-4.48 10-10S14.52 2 9 2z"/>
+              </svg>
+              <span>Pomodoro</span>
+            </button>
+          </div>
+          
+          <div class="timer-controls">
+            <button class="timer-btn timer-btn-start" id="timer-start-btn">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="currentColor" d="M8 5v14l11-7z"/>
+              </svg>
+              <span>Iniciar</span>
+            </button>
+            <button class="timer-btn timer-btn-pause" id="timer-pause-btn" style="display: none;">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+              </svg>
+              <span>Pausar</span>
+            </button>
+            <button class="timer-btn timer-btn-stop" id="timer-stop-btn">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path fill="currentColor" d="M6 6h12v12H6z"/>
+              </svg>
+              <span>Parar</span>
+            </button>
+          </div>
+          
+          <div class="timer-pomodoro-info" id="timer-pomodoro-info" style="display: none;">
+            <div class="pomodoro-session">
+              <span class="pomodoro-label">Sessão:</span>
+              <span class="pomodoro-value" id="pomodoro-session">1/4</span>
+            </div>
+            <div class="pomodoro-next">
+              <span class="pomodoro-label">Próximo:</span>
+              <span class="pomodoro-value" id="pomodoro-next-type">Pausa (5min)</span>
+            </div>
+          </div>
+          
+          <div class="timer-worklog-section">
+            <textarea class="timer-worklog-comment" id="timer-worklog-comment" placeholder="Comentário do worklog (opcional)..." rows="2"></textarea>
+            <div class="timer-worklog-options">
+              <label class="timer-checkbox">
+                <input type="checkbox" id="timer-auto-save" checked>
+                <span>Salvar worklog automaticamente</span>
+              </label>
+            </div>
+            <button class="timer-save-worklog-btn" id="timer-save-worklog-btn">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+              </svg>
+              <span>Salvar Worklog no Jira</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Timer minimizado -->
+      <div class="timer-minimized" id="timer-minimized" style="display: none;">
+        <div class="timer-mini-display" id="timer-mini-display">00:00</div>
+        <button class="timer-mini-restore" id="timer-mini-restore" title="Restaurar">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M19 13H5v-2h14v2z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal de Busca Rápida -->
+    <div class="quick-search-modal" id="quick-search-modal" style="display: none;">
+      <div class="quick-search-container">
+        <div class="quick-search-header">
+          <input type="text" id="quick-search-input" placeholder="🔍 Buscar ticket por key, summary ou projeto..." autofocus>
+          <button class="close-preview-btn" id="close-quick-search">✕</button>
+        </div>
+        <div class="quick-search-results" id="quick-search-results">
+          <!-- Resultados aparecerão aqui -->
+        </div>
+        <div class="quick-search-footer">
+          <span class="quick-search-hint">↑↓ para navegar • Enter para abrir • Esc para fechar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✨ v1.6.0 - Modal de Templates de Resposta -->
+    <div class="templates-modal" id="templates-modal" style="display: none;">
+      <div class="templates-container">
+        <div class="templates-header">
+          <h3>📋 Templates de Resposta</h3>
+          <button class="close-preview-btn" id="close-templates">✕</button>
+        </div>
+        <div class="templates-body">
+          <div class="templates-list" id="templates-list">
+            <!-- Templates serão inseridos aqui -->
+          </div>
+          <div class="templates-actions">
+            <button class="template-add-btn" id="add-template-btn">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              </svg>
+              <span>Criar Novo Template</span>
+            </button>
+          </div>
+        </div>
+        <div class="templates-footer">
+          <span class="templates-hint">Clique em um template para usar • Cmd+Shift+T para abrir</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✨ v1.6.0 - Modal de Editar Template -->
+    <div class="edit-template-modal" id="edit-template-modal" style="display: none;">
+      <div class="edit-template-container">
+        <div class="edit-template-header">
+          <h3>✏️ Editar Template</h3>
+          <button class="close-preview-btn" id="close-edit-template">✕</button>
+        </div>
+        <div class="edit-template-body">
+          <div class="form-group">
+            <label for="template-name">Nome do Template:</label>
+            <input type="text" id="template-name" placeholder="Ex: Aguardando Cliente" class="template-input">
+          </div>
+          <div class="form-group">
+            <label for="template-text">Texto:</label>
+            <textarea id="template-text" rows="6" placeholder="Digite o texto do template...&#10;&#10;Use variáveis:&#10;{{ticketKey}} - Chave do ticket&#10;{{userName}} - Nome do usuário&#10;{{date}} - Data atual&#10;{{time}} - Hora atual" class="template-textarea"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="template-checkbox">
+              <input type="checkbox" id="template-internal">
+              <span>Comentário interno (visível apenas para equipe)</span>
+            </label>
+          </div>
+        </div>
+        <div class="edit-template-footer">
+          <button class="template-cancel-btn" id="cancel-template-btn">Cancelar</button>
+          <button class="template-save-btn" id="save-template-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+            </svg>
+            <span>Salvar Template</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histórico de Atividade do Dia -->
+    <div class="daily-activity-widget" id="daily-activity-widget" style="display: none;">
+      <div class="daily-activity-header">
+        <span>📊 Atividade de Hoje</span>
+        <button class="daily-activity-close-btn" id="close-daily-activity" title="Fechar">✕</button>
+      </div>
+      <div class="daily-activity-stats">
+        <div class="daily-stat">
+          <span class="daily-stat-icon">🆕</span>
+          <span class="daily-stat-value" id="daily-new-count">0</span>
+          <span class="daily-stat-label">Novos</span>
+        </div>
+        <div class="daily-stat">
+          <span class="daily-stat-icon">✅</span>
+          <span class="daily-stat-value" id="daily-closed-count">0</span>
+          <span class="daily-stat-label">Fechados</span>
+        </div>
+        <div class="daily-stat">
+          <span class="daily-stat-icon">📝</span>
+          <span class="daily-stat-value" id="daily-updated-count">0</span>
+          <span class="daily-stat-label">Atualizados</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Idioma -->
+    <div class="language-modal" id="language-modal" style="display: none;">
+      <div class="language-container">
+        <div class="language-header">
+          <h3>🌍 Escolher Idioma / Choose Language / Elegir Idioma</h3>
+          <button class="close-preview-btn" id="close-language-modal">✕</button>
+        </div>
+        <div class="language-body">
+          <div class="language-options">
+            <button class="language-option-btn active" data-language="pt-BR" id="lang-pt-BR">
+              <span class="language-flag">🇧🇷</span>
+              <div class="language-info">
+                <span class="language-name">Português</span>
+                <span class="language-region">Brasil</span>
+              </div>
+            </button>
+            <button class="language-option-btn" data-language="en" id="lang-en">
+              <span class="language-flag">🇺🇸</span>
+              <div class="language-info">
+                <span class="language-name">English</span>
+                <span class="language-region">United States</span>
+              </div>
+            </button>
+            <button class="language-option-btn" data-language="es" id="lang-es">
+              <span class="language-flag">🇪🇸</span>
+              <div class="language-info">
+                <span class="language-name">Español</span>
+                <span class="language-region">España</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Temas Customizáveis -->
+    <div class="theme-customizer-modal" id="theme-customizer-modal" style="display: none;">
+      <div class="theme-customizer-container">
+        <div class="theme-customizer-header">
+          <h3>🎨 Personalizar Tema</h3>
+          <button class="close-preview-btn" id="close-theme-customizer">✕</button>
+        </div>
+        <div class="theme-customizer-body">
+          <div class="theme-option">
+            <label>Modo de Tema:</label>
+            <div class="theme-mode-buttons">
+              <button class="theme-mode-btn active" data-theme-mode="default" id="theme-mode-default">
+                <span class="theme-mode-icon">🎨</span>
+                <span class="theme-mode-label">Padrão</span>
+                <span class="theme-mode-desc">Gradiente Roxo</span>
+              </button>
+              <button class="theme-mode-btn" data-theme-mode="dark" id="theme-mode-dark">
+                <span class="theme-mode-icon">🌙</span>
+                <span class="theme-mode-label">Escuro</span>
+                <span class="theme-mode-desc">Dark Mode</span>
+              </button>
+              <button class="theme-mode-btn" data-theme-mode="light" id="theme-mode-light">
+                <span class="theme-mode-icon">☀️</span>
+                <span class="theme-mode-label">Claro</span>
+                <span class="theme-mode-desc">Light Mode</span>
+              </button>
+            </div>
+          </div>
+          <div class="theme-divider"></div>
+          <div class="theme-option">
+            <label>Cor de Acento:</label>
+            <div class="color-picker-grid">
+              <button class="color-swatch" data-color="#667eea" style="background: #667eea;" onclick="window.applyAccentColor('#667eea', true)"></button>
+              <button class="color-swatch" data-color="#3b82f6" style="background: #3b82f6;" onclick="window.applyAccentColor('#3b82f6', true)"></button>
+              <button class="color-swatch" data-color="#10b981" style="background: #10b981;" onclick="window.applyAccentColor('#10b981', true)"></button>
+              <button class="color-swatch" data-color="#f59e0b" style="background: #f59e0b;" onclick="window.applyAccentColor('#f59e0b', true)"></button>
+              <button class="color-swatch" data-color="#ef4444" style="background: #ef4444;" onclick="window.applyAccentColor('#ef4444', true)"></button>
+              <button class="color-swatch" data-color="#8b5cf6" style="background: #8b5cf6;" onclick="window.applyAccentColor('#8b5cf6', true)"></button>
+              <button class="color-swatch" data-color="#ec4899" style="background: #ec4899;" onclick="window.applyAccentColor('#ec4899', true)"></button>
+              <button class="color-swatch" data-color="#06b6d4" style="background: #06b6d4;" onclick="window.applyAccentColor('#06b6d4', true)"></button>
+            </div>
+            <div class="custom-color-picker-wrapper">
+              <label class="custom-color-label">Ou escolha uma cor personalizada:</label>
+              <div class="custom-color-input-wrapper">
+                <input type="color" id="customColorPicker" class="custom-color-input" value="#667eea">
+                <button class="apply-custom-color-btn" onclick="window.applyCustomColor()">
+                  <span>Aplicar Cor Personalizada</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="theme-option">
+            <label>Temas Especiais:</label>
+            <div class="theme-presets">
+              <button class="theme-preset-btn" data-theme="cyberpunk" onclick="window.applyThemePreset('cyberpunk', true)">Cyberpunk</button>
+              <button class="theme-preset-btn" data-theme="nord" onclick="window.applyThemePreset('nord', true)">Nord</button>
+              <button class="theme-preset-btn" data-theme="dracula" onclick="window.applyThemePreset('dracula', true)">Dracula</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Atalhos Customizáveis -->
+    <div class="shortcuts-custom-modal" id="shortcuts-custom-modal" style="display: none;">
+      <div class="shortcuts-custom-container">
+        <div class="shortcuts-custom-header">
+          <h3>⌨️ Personalizar Atalhos</h3>
+          <button class="close-preview-btn" id="close-shortcuts-custom">✕</button>
+        </div>
+        <div class="shortcuts-custom-body">
+          <div class="shortcut-row">
+            <span class="shortcut-action">Busca Rápida</span>
+            <input type="text" class="shortcut-input" id="shortcut-search" value="Cmd+K" readonly>
+            <button class="shortcut-edit-btn" data-action="search">Editar</button>
+          </div>
+          <div class="shortcut-row">
+            <span class="shortcut-action">Atualizar</span>
+            <input type="text" class="shortcut-input" id="shortcut-refresh" value="Cmd+R" readonly>
+            <button class="shortcut-edit-btn" data-action="refresh">Editar</button>
+          </div>
+        </div>
+        <div class="shortcuts-custom-footer">
+          <button class="btn-secondary" id="reset-shortcuts">Restaurar Padrão</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Export de Relatórios -->
+    <div class="export-modal" id="export-modal" style="display: none;">
+      <div class="export-container">
+        <div class="export-header">
+          <h3>📄 Exportar Relatório</h3>
+          <button class="close-preview-btn" id="close-export-modal">✕</button>
+        </div>
+        <div class="export-body">
+          <div class="export-option">
+            <label>Período:</label>
+            <select id="export-period">
+              <option value="today">Hoje</option>
+              <option value="week">Esta Semana</option>
+              <option value="month">Este Mês</option>
+            </select>
+          </div>
+          <div class="export-option">
+            <label>Formato:</label>
+            <select id="export-format">
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+          <div class="export-option">
+            <label>Incluir:</label>
+            <div class="export-checkboxes">
+              <label><input type="checkbox" id="export-stats" checked> Estatísticas</label>
+              <label><input type="checkbox" id="export-tickets" checked> Lista de Tickets</label>
+              <label><input type="checkbox" id="export-trend" checked> Gráfico de Tendência</label>
+            </div>
+          </div>
+        </div>
+        <div class="export-footer">
+          <button class="btn-primary" id="export-download-btn">📥 Baixar Relatório</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-content">
+        <span id="last-update" data-i18n="footer.loading">Carregando...</span>
+        <div class="loading-indicator" id="loading-indicator" style="display: none;">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <button class="refresh-btn" id="refresh-btn" title="Atualizar (Cmd+R)" data-i18n="footer.refresh" data-i18n-title>
+        <svg viewBox="0 0 24 24" width="16" height="16" class="refresh-icon">
+          <path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+        </svg>
+      </button>
+      <!-- Barra de progresso para próxima atualização -->
+      <div class="progress-bar" id="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Painel de Configuração -->
+    <div class="config-panel" id="config-panel" style="display: none;">
+      <div class="config-header">
+        <h2>⚙️ Configurações</h2>
+        <button class="close-config-btn" id="close-config-btn">✕</button>
+      </div>
+      
+      <!-- Mensagem de boas-vindas (primeira vez) -->
+      <div class="welcome-message" id="welcome-message" style="display: none;">
+        <div class="welcome-icon">👋</div>
+        <h3 data-i18n="welcome.title">Bem-vindo ao Jira Monitor!</h3>
+        <p data-i18n="welcome.subtitle">Para começar, configure suas credenciais do Jira abaixo:</p>
+        <ul>
+          <li><span data-i18n="welcome.step1">✅ URL do Jira da sua empresa</span></li>
+          <li><span data-i18n="welcome.step2">✅ Seu email corporativo</span></li>
+          <li><span data-i18n="welcome.step3">✅ API Token do Jira (clique no link para criar)</span></li>
+        </ul>
+      </div>
+      
+      <div class="config-content">
+        <!-- Seletor de Idioma (destaque para primeira vez) -->
+        <div class="config-group language-selector-config" id="language-selector-config">
+          <label for="config-language-select">
+            <span class="language-icon">🌍</span>
+            <span data-i18n="settings.language">Idioma / Language / Idioma</span>
+          </label>
+          <select id="config-language-select" class="language-select">
+            <option value="pt-BR" selected>🇧🇷 Português (Brasil)</option>
+            <option value="en">🇺🇸 English (United States)</option>
+            <option value="es">🇪🇸 Español (España)</option>
+          </select>
+          <p class="language-hint" data-i18n="settings.languageHint">O tutorial interativo será exibido neste idioma</p>
+        </div>
+        
+        <div class="config-group">
+          <label for="jira-url" data-i18n="settings.jiraUrl">URL do Jira</label>
+          <input type="text" id="jira-url" placeholder="https://sua-empresa.atlassian.net">
+        </div>
+
+        <div class="config-group">
+          <label for="jira-email" data-i18n="settings.email">Email</label>
+          <input type="email" id="jira-email" placeholder="seu.email@empresa.com">
+        </div>
+
+        <div class="config-group">
+          <label for="jira-api-token" data-i18n="settings.apiToken">API Token</label>
+          <div class="password-input-group">
+            <input type="password" id="jira-api-token" placeholder="Seu API token do Jira">
+            <button class="toggle-password-btn" id="toggle-password-btn" type="button">
+              <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20">
+                <path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+              </svg>
+            </button>
+          </div>
+          <a href="#" class="api-token-link" id="create-api-token-link" data-i18n="settings.createApiToken">
+            🔗 Crie seu API token do Jira aqui
+          </a>
+        </div>
+
+        <div class="config-group">
+          <label for="queue-id">ID da Fila</label>
+          <input type="text" id="queue-id" placeholder="1104" value="1104">
+        </div>
+
+        <div class="config-group">
+          <label for="refresh-interval">Intervalo de Atualização (segundos)</label>
+          <input type="number" id="refresh-interval" placeholder="60" value="60" min="10">
+        </div>
+
+        <div class="config-group">
+          <label for="old-tickets-days">Dias sem atualização para alertar</label>
+          <input type="number" id="old-tickets-days" placeholder="7" value="7" min="1" max="30">
+        </div>
+
+        <div class="config-group checkbox-group">
+          <label>
+            <input type="checkbox" id="alert-sla" checked>
+            <span>Alertar sobre SLA próximo (1 hora antes)</span>
+          </label>
+        </div>
+
+        <div class="config-group checkbox-group">
+          <label>
+            <input type="checkbox" id="alert-old-tickets" checked>
+            <span>Alertar sobre tickets antigos</span>
+          </label>
+        </div>
+
+        <div class="config-group checkbox-group">
+          <label>
+            <input type="checkbox" id="desktop-notifications" checked>
+            <span>🔔 Notificações desktop</span>
+          </label>
+          <button class="btn-link-small" id="test-notification-btn" style="margin-left: 10px;">Testar</button>
+        </div>
+
+        <div class="config-group" id="notification-types-group" style="margin-left: 24px; display: none;">
+          <div class="config-group checkbox-group" style="margin-bottom: 4px;">
+            <label>
+              <input type="checkbox" id="notify-new-tickets" checked>
+              <span>🎫 Novos tickets atribuídos</span>
+            </label>
+          </div>
+          <div class="config-group checkbox-group" style="margin-bottom: 4px;">
+            <label>
+              <input type="checkbox" id="notify-status-changes" checked>
+              <span>🔄 Mudanças de status</span>
+            </label>
+          </div>
+          <div class="config-group checkbox-group" style="margin-bottom: 4px;">
+            <label>
+              <input type="checkbox" id="notify-reassignments" checked>
+              <span>👤 Reatribuições para você</span>
+            </label>
+          </div>
+          <div class="config-group checkbox-group" style="margin-bottom: 4px;">
+            <label>
+              <input type="checkbox" id="notify-mentions" checked>
+              <span>📢 Quando você for mencionado</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="config-group checkbox-group">
+          <label>
+            <input type="checkbox" id="sound-notifications" checked>
+            <span>🔊 Tocar som nas notificações</span>
+          </label>
+        </div>
+
+        <div class="config-group checkbox-group">
+          <label>
+            <input type="checkbox" id="pro-mode">
+            <span>⭐ Modo Pro</span>
+          </label>
+        </div>
+
+        <!-- Janela Flutuante -->
+        <div class="config-section-title" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #333;">
+          <span>🪟 Janela Flutuante (Faróis)</span>
+        </div>
+        
+        <div class="config-group checkbox-group">
+          <label>
+            <input type="checkbox" id="floating-window-enabled" checked>
+            <span>Ativar janela flutuante</span>
+          </label>
+        </div>
+
+        <div id="floating-window-options">
+          <div class="config-group">
+            <label for="floating-window-opacity">Opacidade</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="range" id="floating-window-opacity" min="0.3" max="1" step="0.1" value="0.9" style="flex: 1;">
+              <span id="floating-window-opacity-value">90%</span>
+            </div>
+          </div>
+
+          <div class="config-group">
+            <label>Tamanho</label>
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1;">
+                <label style="font-size: 11px; color: #888;">Largura</label>
+                <input type="number" id="floating-window-width" value="160" min="100" max="300" style="width: 100%;">
+              </div>
+              <div style="flex: 1;">
+                <label style="font-size: 11px; color: #888;">Altura</label>
+                <input type="number" id="floating-window-height" value="80" min="40" max="200" style="width: 100%;">
+              </div>
+            </div>
+          </div>
+
+          <div class="config-group">
+            <label>Mostrar</label>
+            <div class="floating-window-checkboxes" style="display: flex; flex-wrap: wrap; gap: 10px;">
+              <label style="display: flex; align-items: center; gap: 4px;">
+                <input type="checkbox" id="fw-show-critical" checked>
+                <span style="color: #ff6b6b;">🔴 Críticos</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px;">
+                <input type="checkbox" id="fw-show-warning" checked>
+                <span style="color: #ffd93d;">🟡 Alerta</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px;">
+                <input type="checkbox" id="fw-show-normal" checked>
+                <span style="color: #6bcb77;">🟢 Normal</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="config-group checkbox-group">
+            <label>
+              <input type="checkbox" id="fw-show-ticket-list">
+              <span>Mostrar lista de tickets</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="config-actions">
+          <button class="btn-primary" id="save-config-btn" data-i18n="settings.save">Salvar</button>
+          <button class="btn-secondary" id="cancel-config-btn" data-i18n="settings.cancel">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Atalhos -->
+    <!-- Modal Adicionar Usuário -->
+    <div class="add-user-modal" id="add-user-modal" style="display: none;">
+      <div class="add-user-modal-content">
+        <div class="add-user-modal-header">
+          <h2>➕ Adicionar Usuário para Monitorar</h2>
+          <button class="close-add-user-btn" id="close-add-user-btn">✕</button>
+        </div>
+        <div class="add-user-modal-body">
+          <p class="add-user-description">Digite o e-mail do usuário que deseja monitorar:</p>
+          <input 
+            type="email" 
+            id="new-user-email-input" 
+            class="new-user-email-input" 
+            placeholder="user@company.com"
+            autocomplete="off"
+          />
+          <div class="add-user-actions">
+            <button class="btn-secondary" id="cancel-add-user-btn">Cancelar</button>
+            <button class="btn-primary" id="confirm-add-user-btn">Adicionar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="shortcuts-modal" id="shortcuts-modal" style="display: none;">
+      <div class="shortcuts-modal-content">
+        <div class="shortcuts-modal-header">
+          <h2>⌨️ Atalhos de Teclado</h2>
+          <button class="close-shortcuts-btn" id="close-shortcuts-btn">✕</button>
+        </div>
+        <div class="shortcuts-modal-body">
+          <div class="shortcuts-section">
+            <h3>🚀 Atalhos Principais</h3>
+            <div class="shortcut-item">
+              <div class="shortcut-keys">
+                <kbd>Cmd</kbd> + <kbd>K</kbd>
+              </div>
+              <div class="shortcut-description">🔍 Abrir busca rápida de tickets</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys">
+                <kbd>Cmd</kbd> + <kbd>P</kbd>
+              </div>
+              <div class="shortcut-description">⭐ Alternar Modo Pro</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys">
+                <kbd>Cmd</kbd> + <kbd>L</kbd>
+              </div>
+              <div class="shortcut-description">🔄 Alternar layout (vertical/horizontal)</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys">
+                <kbd>Cmd</kbd> + <kbd>R</kbd>
+              </div>
+              <div class="shortcut-description">🔄 Atualizar manualmente</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys">
+                <kbd>Cmd</kbd> + <kbd>,</kbd>
+              </div>
+              <div class="shortcut-description">⚙️ Abrir configurações</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys">
+                <kbd>Cmd</kbd> + <kbd>T</kbd>
+              </div>
+              <div class="shortcut-description">⏱️ Abrir Timer / Pomodoro</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys">
+                <kbd>Esc</kbd>
+              </div>
+              <div class="shortcut-description">❌ Fechar modais ou minimizar</div>
+            </div>
+          </div>
+
+          <div class="shortcuts-section">
+            <h3>✨ Novos Recursos UX</h3>
+            <div class="shortcut-item">
+              <div class="shortcut-keys">
+                <kbd>Cmd</kbd> + <kbd>E</kbd>
+              </div>
+              <div class="shortcut-description">📄 Exportar relatório</div>
+            </div>
+          </div>
+
+          <div class="shortcuts-section">
+            <h3>🔢 Atalhos Numéricos</h3>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>1</kbd></div>
+              <div class="shortcut-description">📊 Abrir card Total de Tickets</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>2</kbd></div>
+              <div class="shortcut-description">🔧 Abrir card Waiting for Support</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>3</kbd></div>
+              <div class="shortcut-description">👤 Abrir card Waiting for Customer</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>4</kbd></div>
+              <div class="shortcut-description">⏸️ Abrir card Tickets Pending</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>5</kbd></div>
+              <div class="shortcut-description">🔄 Abrir card Tickets In Progress</div>
+            </div>
+          </div>
+
+          <div class="shortcuts-section">
+            <h3>🔍 Busca Rápida</h3>
+            <div class="shortcut-item">
+              <div class="shortcut-keys">
+                <kbd>↑</kbd> <kbd>↓</kbd>
+              </div>
+              <div class="shortcut-description">Navegar entre resultados</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Enter</kbd></div>
+              <div class="shortcut-description">Abrir ticket selecionado</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Esc</kbd></div>
+              <div class="shortcut-description">Fechar busca</div>
+            </div>
+          </div>
+
+          <div class="shortcuts-section">
+            <h3>💡 Dicas</h3>
+            <div class="shortcut-item" style="border: none; padding: 8px 0;">
+              <div class="shortcut-description" style="color: #888; font-size: 12px;">
+                • Use <kbd>Cmd+K</kbd> para buscar tickets rapidamente<br>
+                • Arraste os cards principais para reordenar (Modo Pro)<br>
+                • Hover nos tickets mostra quick actions (copiar, abrir)<br>
+                • Click nos gráficos para ver detalhes interativos
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Preview de Tickets -->
+    <div class="ticket-preview-modal" id="ticket-preview-modal" style="display: none;">
+      <div class="ticket-preview-content">
+        <div class="ticket-preview-loading" id="ticket-preview-loading">
+          <div class="spinner-large"></div>
+          <p>Carregando ticket...</p>
+        </div>
+        <div class="ticket-preview-body" id="ticket-preview-body" style="display: none;">
+          <!-- Conteúdo do ticket será inserido aqui -->
+        </div>
+        <div class="ticket-preview-error" id="ticket-preview-error" style="display: none;">
+          <p>Erro ao carregar ticket</p>
+          <button class="btn-primary" id="retry-ticket-preview">Tentar Novamente</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Handle de Redimensionamento -->
+    <div class="resize-handle" id="resize-handle"></div>
+  </div>
+
+  <!-- Compatibilidade Electron -> HTTP -->
+  <script src="electron-compat.js"></script>
+  <script src="renderer.js"></script>
+  
+  <!-- Menu de contexto para copiar texto -->
+  <script>
+    // Criar menu de contexto customizado
+    const contextMenu = document.createElement('div');
+    contextMenu.id = 'custom-context-menu';
+    contextMenu.innerHTML = `
+      <div class="context-menu-item" data-action="copy">Copiar</div>
+      <div class="context-menu-item" data-action="paste">Colar</div>
+      <div class="context-menu-item" data-action="selectall">Selecionar Tudo</div>
+    `;
+    contextMenu.style.cssText = `
+      display: none;
+      position: fixed;
+      background: #2a2a3e;
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 4px 0;
+      min-width: 140px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      z-index: 99999;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+    `;
+    document.body.appendChild(contextMenu);
+    
+    // Estilo dos itens
+    contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
+      item.style.cssText = `
+        padding: 6px 12px;
+        cursor: default;
+        color: #fff;
+      `;
+      item.addEventListener('mouseenter', () => item.style.background = '#667eea');
+      item.addEventListener('mouseleave', () => item.style.background = 'transparent');
+    });
+    
+    // Mostrar menu ao clicar com botão direito
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      contextMenu.style.display = 'block';
+      contextMenu.style.left = Math.min(e.clientX, window.innerWidth - 150) + 'px';
+      contextMenu.style.top = Math.min(e.clientY, window.innerHeight - 100) + 'px';
+    });
+    
+    // Esconder menu ao clicar em qualquer lugar ou pressionar ESC
+    document.addEventListener('mousedown', (e) => {
+      if (!contextMenu.contains(e.target)) {
+        contextMenu.style.display = 'none';
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') contextMenu.style.display = 'none';
+    });
+    document.addEventListener('scroll', () => contextMenu.style.display = 'none', true);
+    window.addEventListener('blur', () => contextMenu.style.display = 'none');
+    
+    // Ações do menu
+    contextMenu.addEventListener('click', async (e) => {
+      const action = e.target.dataset.action;
+      if (!action) return;
+      
+      const selection = window.getSelection().toString();
+      const activeEl = document.activeElement;
+      
+      if (action === 'copy' && selection) {
+        try { await navigator.clipboard.writeText(selection); } catch { document.execCommand('copy'); }
+      }
+      if (action === 'paste') {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
+            const start = activeEl.selectionStart;
+            const end = activeEl.selectionEnd;
+            activeEl.value = activeEl.value.slice(0, start) + text + activeEl.value.slice(end);
+            activeEl.selectionStart = activeEl.selectionEnd = start + text.length;
+            activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        } catch { document.execCommand('paste'); }
+      }
+      if (action === 'selectall') {
+        if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
+          activeEl.select();
+        } else {
+          window.getSelection().selectAllChildren(e.target.closest('.ticket-description') || document.body);
+        }
+      }
+      contextMenu.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+ENV/
+
+# Build
+build/
+dist/
+*.egg-info/
+*.egg
+*.spec
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Config (contains credentials)
+config.json
+
+# Logs
+*.log
+
+# PyInstaller
+*.manifest
+*.spec

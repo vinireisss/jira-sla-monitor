@@ -1,0 +1,41 @@
+/**
+ * PyWebView Fixes - Apenas para modo expandido
+ */
+
+/* Fix APENAS para card EXPANDIDO */
+.stat-card.expanded {
+    /* Limitar largura ao expandir */
+    max-width: 380px !important;
+    width: 380px !important;
+    /* Limitar altura e adicionar scroll */
+    max-height: 400px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    /* Posicionamento */
+    position: absolute !important;
+    z-index: 1000 !important;
+    /* Visual */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+}
+
+/* Conteúdo dentro do card expandido */
+.stat-card.expanded .stat-card-tickets {
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* Remover drag regions do Electron */
+* {
+    -webkit-app-region: no-drag !important;
+}
+
+/* Garantir clicabilidade */
+button, a, input, select, .clickable, [onclick] {
+    pointer-events: auto !important;
+    cursor: pointer;
+}
+
+input, textarea, select {
+    cursor: text;
+}
