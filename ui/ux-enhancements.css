@@ -240,6 +240,33 @@
   font-size: 12px !important;
 }
 
+/* 🎯 BOTÃO SAIR DO FOCUS MODE */
+.exit-focus-btn {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 10000;
+  background: rgba(231, 76, 60, 0.9);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.exit-focus-btn:hover {
+  background: rgba(231, 76, 60, 1);
+  transform: scale(1.05);
+}
+
+.focus-mode .exit-focus-btn {
+  display: block !important;
+}
+
 /* ✏️ CAMPOS EDITÁVEIS NO TICKET PREVIEW */
 .ticket-info-item.editable-field {
   background: rgba(102, 126, 234, 0.12);

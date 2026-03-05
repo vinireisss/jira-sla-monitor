@@ -985,6 +985,20 @@ async function loadConfig() {
       notificationTypesGroup.style.display = config.desktopNotifications !== false ? 'block' : 'none';
     }
     
+    // Alertas Proativos
+    const proactiveAlertsCheckbox = document.getElementById('proactive-alerts');
+    const proactiveAlertsHours = document.getElementById('proactive-alerts-hours');
+    const proactiveAlertsConfig = document.getElementById('proactive-alerts-config');
+    if (proactiveAlertsCheckbox) {
+      proactiveAlertsCheckbox.checked = config.proactiveAlerts === true;
+    }
+    if (proactiveAlertsHours) {
+      proactiveAlertsHours.value = config.proactiveAlertsHours || 2;
+    }
+    if (proactiveAlertsConfig) {
+      proactiveAlertsConfig.style.display = config.proactiveAlerts ? 'block' : 'none';
+    }
+    
     // Aplicar tema (gerenciado pelo modal de temas no menu)
     const theme = config.theme || 'default';
     applyTheme(theme);
@@ -1114,6 +1128,9 @@ async function saveConfig() {
       notifyStatusChanges: document.getElementById('notify-status-changes').checked,
       notifyReassignments: document.getElementById('notify-reassignments').checked,
       notifyMentions: document.getElementById('notify-mentions').checked,
+      // Alertas Proativos
+      proactiveAlerts: document.getElementById('proactive-alerts')?.checked ?? false,
+      proactiveAlertsHours: parseInt(document.getElementById('proactive-alerts-hours')?.value ?? 2),
       // monitorOtherUser e otherUserEmail agora são gerenciados pelo botão no header
       monitorOtherUser: currentConfig.monitorOtherUser || false,
       otherUserEmail: currentConfig.otherUserEmail || '',
@@ -1659,6 +1676,23 @@ function setupEventListeners() {
     const notificationTypesGroup = document.getElementById('notification-types-group');
     notificationTypesGroup.style.display = e.target.checked ? 'block' : 'none';
   });
+  
+  // Alertas Proativos - toggle opções
+  const proactiveAlertsCheckbox = document.getElementById('proactive-alerts');
+  if (proactiveAlertsCheckbox) {
+    proactiveAlertsCheckbox.addEventListener('change', (e) => {
+      const proactiveConfig = document.getElementById('proactive-alerts-config');
+      if (proactiveConfig) proactiveConfig.style.display = e.target.checked ? 'block' : 'none';
+    });
+  }
+  
+  // Botão sair do Focus Mode
+  const exitFocusBtn = document.getElementById('exit-focus-btn');
+  if (exitFocusBtn) {
+    exitFocusBtn.addEventListener('click', () => {
+      toggleFocusMode();
+    });
+  }
   
   // Refresh button
   document.getElementById('refresh-btn').addEventListener('click', fetchAndUpdateStats);
@@ -7120,6 +7154,43 @@ function startAutoUpdate() {
   
   // Verificar menções também na inicialização
   checkForMentions();
+  
+  // Iniciar verificação de alertas proativos
+  startProactiveAlertsCheck();
+}
+
+// Verificação periódica de Alertas Proativos
+let proactiveAlertsInterval = null;
+
+function startProactiveAlertsCheck() {
+  if (proactiveAlertsInterval) {
+    clearInterval(proactiveAlertsInterval);
+  }
+  
+  if (!currentConfig.proactiveAlerts) {
+    return;
+  }
+  
+  const hours = currentConfig.proactiveAlertsHours || 2;
+  
+  // Verificar após 30 segundos e depois a cada 15 minutos
+  setTimeout(() => {
+    checkProactiveAlerts(hours);
+  }, 30000);
+  
+  proactiveAlertsInterval = setInterval(() => {
+    checkProactiveAlerts(hours);
+  }, 15 * 60 * 1000); // 15 minutos
+}
+
+async function checkProactiveAlerts(hours) {
+  if (!currentConfig.proactiveAlerts) return;
+  
+  try {
+    await ipcRenderer.invoke('send-proactive-alerts', hours);
+  } catch (error) {
+    console.warn('Erro ao verificar alertas proativos:', error);
+  }
 }
 
 // Resize Handle

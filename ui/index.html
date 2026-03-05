@@ -17,6 +17,11 @@
 </head>
 <body>
   <div class="app-container">
+    <!-- 🎯 BOTÃO SAIR FOCUS MODE -->
+    <button class="exit-focus-btn" id="exit-focus-btn" title="Sair do Modo Focus (Cmd+Shift+F)" style="display: none;">
+      ✕ Sair do Focus
+    </button>
+    
     <!-- 🔬 MODO MICRO - Visualização ultra compacta (192x78) -->
     <div class="micro-mode" id="micro-mode" style="display: none;">
       <div class="micro-mode-content">
@@ -1338,6 +1343,24 @@
             <input type="checkbox" id="pro-mode">
             <span>⭐ Modo Pro</span>
           </label>
+        </div>
+
+        <!-- Alertas Proativos -->
+        <div class="config-section-title" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #333;">
+          <span>⏰ Alertas Proativos</span>
+        </div>
+        
+        <div class="config-group checkbox-group">
+          <label>
+            <input type="checkbox" id="proactive-alerts">
+            <span>Alertar tickets aguardando resposta</span>
+          </label>
+        </div>
+
+        <div class="config-group" id="proactive-alerts-config" style="margin-left: 24px; display: none;">
+          <label for="proactive-alerts-hours">Alertar após quantas horas sem resposta:</label>
+          <input type="number" id="proactive-alerts-hours" value="2" min="1" max="48" style="width: 60px;">
+          <span style="color: #888; font-size: 12px; margin-left: 8px;">horas</span>
         </div>
 
         <div class="config-actions">
