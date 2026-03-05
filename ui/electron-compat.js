@@ -115,14 +115,10 @@ async function ipcInvoke(channel, ...args) {
         'get-window-bounds': () => callApi('getWindowBounds'),
         'set-window-bounds': (b) => callApi('setWindowBounds', b),
         
-        // Tray / Floating Window
+        // Tray / Proactive Alerts
         'update-tray': (data) => callApi('updateTray', data),
         'check-tickets-needing-response': (h) => callApi('checkTicketsNeedingResponse', h || 2),
         'send-proactive-alerts': (h) => callApi('sendProactiveAlerts', h || 2),
-        'toggle-floating-window': () => callApi('toggleFloatingWindow'),
-        'update-floating-window-config': (cfg) => callApi('updateFloatingWindowConfig', cfg),
-        'get-floating-window-config': () => callApi('getFloatingWindowConfig'),
-        'set-floating-window-theme': (theme) => callApi('setFloatingWindowTheme', theme),
         
         // Outros
         'get-performance-metrics': (d) => callApi('getPerformanceMetrics', d || 30),

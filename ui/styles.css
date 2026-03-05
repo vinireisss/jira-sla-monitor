@@ -264,27 +264,6 @@ body {
   background: #e74c3c;
 }
 
-/* Toggle Switch para Janela Flutuante */
-.floating-toggle-container {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  background: var(--button-bg);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.floating-toggle-container:hover {
-  background: var(--button-hover);
-}
-
-.floating-toggle-label {
-  font-size: 14px;
-  color: var(--header-text);
-}
-
 .toggle-switch {
   position: relative;
   display: inline-block;

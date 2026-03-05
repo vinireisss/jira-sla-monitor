@@ -299,12 +299,6 @@ function translateStaticElements(lang) {
   const configHeader = document.querySelector('.config-header h2');
   if (configHeader) configHeader.textContent = tr('settings.title');
   
-  // Floating Window Section
-  const floatTitle = document.querySelector('.config-section-title span');
-  if (floatTitle && floatTitle.textContent.includes('Janela Flutuante')) {
-    floatTitle.textContent = tr('floatingWindow.title');
-  }
-  
   // Shortcuts Modal
   const shortcutsHeader = document.querySelector('.shortcuts-modal-header h2');
   if (shortcutsHeader) shortcutsHeader.textContent = tr('shortcuts.title');
@@ -779,9 +773,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   setupKeyboardShortcuts();
   
-  // Inicializar toggle da janela flutuante
-  setupFloatingWindowToggle();
-  
   // Inicializar contadores de atividade diária
   checkDailyReset();
   updateDailyActivityDisplay();
@@ -1097,30 +1088,6 @@ async function loadConfig() {
     // Atualizar indicador de usuário monitorado
     updateMonitoredUserIndicator();
     
-    // Carregar configurações da janela flutuante
-    const fw = config.floatingWindow || {};
-    const fwEnabled = document.getElementById('floating-window-enabled');
-    const fwOpacity = document.getElementById('floating-window-opacity');
-    const fwOpacityValue = document.getElementById('floating-window-opacity-value');
-    const fwWidth = document.getElementById('floating-window-width');
-    const fwHeight = document.getElementById('floating-window-height');
-    const fwShowCritical = document.getElementById('fw-show-critical');
-    const fwShowWarning = document.getElementById('fw-show-warning');
-    const fwShowNormal = document.getElementById('fw-show-normal');
-    const fwShowTicketList = document.getElementById('fw-show-ticket-list');
-    const fwOptions = document.getElementById('floating-window-options');
-    
-    if (fwEnabled) fwEnabled.checked = fw.enabled !== false;
-    if (fwOpacity) fwOpacity.value = fw.opacity ?? 0.9;
-    if (fwOpacityValue) fwOpacityValue.textContent = Math.round((fw.opacity ?? 0.9) * 100) + '%';
-    if (fwWidth) fwWidth.value = fw.width ?? 160;
-    if (fwHeight) fwHeight.value = fw.height ?? 80;
-    if (fwShowCritical) fwShowCritical.checked = fw.showCritical !== false;
-    if (fwShowWarning) fwShowWarning.checked = fw.showWarning !== false;
-    if (fwShowNormal) fwShowNormal.checked = fw.showNormal !== false;
-    if (fwShowTicketList) fwShowTicketList.checked = fw.showTicketList === true;
-    if (fwOptions) fwOptions.style.display = fw.enabled !== false ? 'block' : 'none';
-    
   } catch (error) {
     console.error('Erro ao carregar configuração:', error);
   }
@@ -1164,28 +1131,8 @@ async function saveConfig() {
       customShortcuts: currentConfig.customShortcuts,
       // IMPORTANTE: Manter hasCompletedTutorial do config anterior
       // Se não existir, deixar undefined para que o tour possa disparar
-      hasCompletedTutorial: currentConfig.hasCompletedTutorial,
-      // Janela flutuante
-      floatingWindow: {
-        enabled: document.getElementById('floating-window-enabled')?.checked ?? false,
-        opacity: parseFloat(document.getElementById('floating-window-opacity')?.value ?? 0.9),
-        width: parseInt(document.getElementById('floating-window-width')?.value ?? 160),
-        height: parseInt(document.getElementById('floating-window-height')?.value ?? 80),
-        showCritical: document.getElementById('fw-show-critical')?.checked ?? true,
-        showWarning: document.getElementById('fw-show-warning')?.checked ?? true,
-        showNormal: document.getElementById('fw-show-normal')?.checked ?? true,
-        showTicketList: document.getElementById('fw-show-ticket-list')?.checked ?? false,
-        x: currentConfig.floatingWindow?.x ?? 20,
-        y: currentConfig.floatingWindow?.y ?? 60
-      }
+      hasCompletedTutorial: currentConfig.hasCompletedTutorial
     };
-    
-    // Aplicar configurações da janela flutuante
-    if (config.floatingWindow) {
-      ipcRenderer.invoke('update-floating-window-config', config.floatingWindow).catch(err => {
-        console.warn('Erro ao atualizar floating window:', err);
-      });
-    }
     
     await ipcRenderer.invoke('save-config', config);
     currentConfig = config;
@@ -1497,10 +1444,6 @@ function applyTheme(theme) {
   container.setAttribute('data-theme', theme);
   
   // Atualizar tema da janela flutuante
-  ipcRenderer.invoke('set-floating-window-theme', theme).catch(err => {
-    console.warn('Erro ao atualizar tema da janela flutuante:', err);
-  });
-  
   debugLog('🎨 Tema aplicado:', theme);
 }
 
@@ -1716,24 +1659,6 @@ function setupEventListeners() {
     const notificationTypesGroup = document.getElementById('notification-types-group');
     notificationTypesGroup.style.display = e.target.checked ? 'block' : 'none';
   });
-  
-  // Janela flutuante - toggle opções
-  const fwEnabledCheckbox = document.getElementById('floating-window-enabled');
-  if (fwEnabledCheckbox) {
-    fwEnabledCheckbox.addEventListener('change', (e) => {
-      const fwOptions = document.getElementById('floating-window-options');
-      if (fwOptions) fwOptions.style.display = e.target.checked ? 'block' : 'none';
-    });
-  }
-  
-  // Janela flutuante - slider de opacidade
-  const fwOpacitySlider = document.getElementById('floating-window-opacity');
-  if (fwOpacitySlider) {
-    fwOpacitySlider.addEventListener('input', (e) => {
-      const valueDisplay = document.getElementById('floating-window-opacity-value');
-      if (valueDisplay) valueDisplay.textContent = Math.round(e.target.value * 100) + '%';
-    });
-  }
   
   // Refresh button
   document.getElementById('refresh-btn').addEventListener('click', fetchAndUpdateStats);
@@ -1973,54 +1898,6 @@ function setupEventListeners() {
   });
   
   debugLog('✅ Event listeners v1.5.0 configurados');
-}
-
-// Setup do Toggle da Janela Flutuante
-function setupFloatingWindowToggle() {
-  const toggle = document.getElementById('floating-window-toggle');
-  if (!toggle) {
-    console.warn('⚠️ Toggle da janela flutuante não encontrado');
-    return;
-  }
-  
-  // Carregar estado inicial do config
-  const floatingEnabled = currentConfig.floatingWindow?.enabled ?? false;
-  toggle.checked = floatingEnabled;
-  
-  debugLog('🪟 Janela flutuante toggle inicializado:', floatingEnabled);
-  
-  // Listener para mudanças
-  toggle.addEventListener('change', async (e) => {
-    const enabled = e.target.checked;
-    debugLog('🪟 Toggle janela flutuante:', enabled);
-    
-    try {
-      // Atualizar config via API
-      const result = await ipcRenderer.invoke('update-floating-window-config', { enabled });
-      
-      if (result.success) {
-        // Atualizar config local
-        if (!currentConfig.floatingWindow) {
-          currentConfig.floatingWindow = {};
-        }
-        currentConfig.floatingWindow.enabled = enabled;
-        
-        // Mostrar toast
-        const message = enabled 
-          ? t('floatingWindow.enabled', 'Janela flutuante ativada')
-          : t('floatingWindow.disabled', 'Janela flutuante desativada');
-        showToast('🪟', message, 'success');
-      } else {
-        // Reverter toggle em caso de erro
-        toggle.checked = !enabled;
-        showToast(t('general.error'), result.error || 'Erro ao alterar janela flutuante', 'error');
-      }
-    } catch (error) {
-      console.error('Erro ao alterar janela flutuante:', error);
-      toggle.checked = !enabled;
-      showToast(t('general.error'), error.message, 'error');
-    }
-  });
 }
 
 // Atalhos de Teclado
